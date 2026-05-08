@@ -456,10 +456,6 @@
         <input type="text" id="s-id" placeholder="Ej: 2024001">
       </div>
       <div class="form-group">
-        <label>Grupo</label>
-        <select id="s-group"></select>
-      </div>
-      <div class="form-group">
         <label>Correo (opcional)</label>
         <input type="text" id="s-email" placeholder="correo@ejemplo.com">
       </div>
@@ -470,6 +466,11 @@
           <option value="Irregular">Irregular</option>
           <option value="Baja">Baja</option>
         </select>
+      </div>
+      <div class="form-group full">
+        <label>Grupos / Materias <span style="color:var(--outline); font-weight:400;">(selecciona uno o más)</span></label>
+        <div id="s-groups-container" style="display:flex; flex-wrap:wrap; gap:8px; padding:10px; border:1px solid var(--outline-variant); border-radius:var(--radius); background:#fff; min-height:44px;"></div>
+        <div style="font-size:11px; color:var(--outline); margin-top:4px;">Un alumno puede estar inscrito en varias materias simultáneamente.</div>
       </div>
     </div>
     <div class="modal-actions">
@@ -603,7 +604,7 @@
           <option value="">— Seleccionar grupo —</option>
         </select>
       </div>
-      <p style="font-size:11px; color:var(--outline); margin-top:6px;">Todos los alumnos importados quedarán asignados al grupo seleccionado.</p>
+      <p style="font-size:11px; color:var(--outline); margin-top:6px;">Los alumnos nuevos quedarán en este grupo. Si un alumno ya existe, se le <strong>inscribirá en esta materia adicional</strong> sin borrar sus demás grupos.</p>
     </div>
 
     <div class="modal-actions">
@@ -623,13 +624,13 @@ let state = {
     { id: 'g3', name: 'Química 1°C', color: '#6d3a9c', evals: 3 }
   ],
   students: [
-    { id: 1, name: 'Ana', lastname: 'García López', studentId: '2024001', group: 'g1', email: 'ana@edu.mx', status: 'Activo' },
-    { id: 2, name: 'Carlos', lastname: 'Martínez Pérez', studentId: '2024002', group: 'g1', email: '', status: 'Activo' },
-    { id: 3, name: 'Diana', lastname: 'Hernández Ruiz', studentId: '2024003', group: 'g1', email: '', status: 'Activo' },
-    { id: 4, name: 'Eduardo', lastname: 'López Torres', studentId: '2024004', group: 'g2', email: '', status: 'Activo' },
-    { id: 5, name: 'Fernanda', lastname: 'Rodríguez Soto', studentId: '2024005', group: 'g2', email: '', status: 'Irregular' },
-    { id: 6, name: 'Gabriel', lastname: 'Sánchez Mora', studentId: '2024006', group: 'g3', email: '', status: 'Activo' },
-    { id: 7, name: 'Héctor', lastname: 'Ramírez Villa', studentId: '2024007', group: 'g3', email: '', status: 'Activo' },
+    { id: 1, name: 'Ana', lastname: 'García López', studentId: '2024001', groups: ['g1','g2'], email: 'ana@edu.mx', status: 'Activo' },
+    { id: 2, name: 'Carlos', lastname: 'Martínez Pérez', studentId: '2024002', groups: ['g1'], email: '', status: 'Activo' },
+    { id: 3, name: 'Diana', lastname: 'Hernández Ruiz', studentId: '2024003', groups: ['g1','g3'], email: '', status: 'Activo' },
+    { id: 4, name: 'Eduardo', lastname: 'López Torres', studentId: '2024004', groups: ['g2'], email: '', status: 'Activo' },
+    { id: 5, name: 'Fernanda', lastname: 'Rodríguez Soto', studentId: '2024005', groups: ['g2','g3'], email: '', status: 'Irregular' },
+    { id: 6, name: 'Gabriel', lastname: 'Sánchez Mora', studentId: '2024006', groups: ['g3'], email: '', status: 'Activo' },
+    { id: 7, name: 'Héctor', lastname: 'Ramírez Villa', studentId: '2024007', groups: ['g1','g2','g3'], email: '', status: 'Activo' },
   ],
   grades: {}, // { studentId_groupId_evalIdx: score }
   exams: {}, // { studentId_groupId_period: score }
@@ -710,7 +711,7 @@ function renderGroups() {
 }
 
 function populateGroupSelects() {
-  ['student-group-filter','s-group','grade-group-sel','att-group-sel','report-group-sel','bulk-group-sel'].forEach(id => {
+  ['student-group-filter','grade-group-sel','att-group-sel','report-group-sel','bulk-group-sel'].forEach(id => {
     populateGroupSelect(id);
   });
 }
@@ -777,7 +778,7 @@ function deleteGroup(gid) {
   if (!g) return;
   if (!confirm(`¿Eliminar el grupo "${g.name}"? Se perderán todos los datos asociados.`)) return;
   state.groups = state.groups.filter(x => x.id !== gid);
-  state.students.forEach(s => { if (s.group === gid) s.group = ''; });
+  state.students.forEach(s => { s.groups = (s.groups || []).filter(gid2 => gid2 !== gid); });
   delete state.evalConfigs[gid];
   renderGroups();
   populateGroupSelects();
@@ -797,14 +798,19 @@ function renderStudentsTable(list) {
     return;
   }
   students.forEach((s, i) => {
-    const g = state.groups.find(gr => gr.id === s.group);
-    const avg = calcStudentAvg(s.id, s.group);
+    const sGroups = (s.groups || []).map(gid => state.groups.find(gr => gr.id === gid)).filter(Boolean);
+    // Compute overall average across all groups
+    const allAvgs = sGroups.map(g => calcStudentAvg(s.id, g.id)).filter(a => a !== null);
+    const avg = allAvgs.length ? allAvgs.reduce((a,b)=>a+b,0)/allAvgs.length : null;
     const pill = gradePill(avg);
+    const groupTags = sGroups.length
+      ? sGroups.map(g => `<span style="background:${g.color}22; color:${g.color}; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; display:inline-block; margin:1px;">${g.name}</span>`).join('')
+      : '<span style="color:var(--outline); font-size:11px;">Sin grupo</span>';
     tbody.innerHTML += `<tr>
       <td style="color:var(--outline); font-size:12px;">${i+1}</td>
       <td><strong>${s.lastname}, ${s.name}</strong></td>
       <td style="color:var(--outline);">${s.studentId}</td>
-      <td><span style="background:${g ? g.color + '22' : '#eee'}; color:${g ? g.color : '#555'}; padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:700;">${g ? g.name : 'Sin grupo'}</span></td>
+      <td style="max-width:220px;">${groupTags}</td>
       <td>${avg !== null ? `<span style="font-weight:700;">${avg.toFixed(1)}</span>` : '<span style="color:var(--outline);">—</span>'}</td>
       <td>${pill}</td>
       <td><div class="td-actions">
@@ -821,7 +827,7 @@ function filterStudents() {
   const gf = document.getElementById('student-group-filter').value;
   let list = state.students.filter(s => {
     const full = (s.name + ' ' + s.lastname + ' ' + s.studentId).toLowerCase();
-    return (!q || full.includes(q)) && (!gf || s.group === gf);
+    return (!q || full.includes(q)) && (!gf || (s.groups || []).includes(gf));
   });
   renderStudentsTable(list);
 }
@@ -835,13 +841,22 @@ function sortStudentsAZ() {
 function openStudentModal(id) {
   state.currentEditId = id || null;
   document.getElementById('student-modal-title').textContent = id ? 'Editar estudiante' : 'Agregar estudiante';
-  populateGroupSelect('s-group');
+  const selectedGroups = id ? (state.students.find(x => x.id === id)?.groups || []) : [];
+  // Render group checkboxes
+  const container = document.getElementById('s-groups-container');
+  container.innerHTML = state.groups.map(g => {
+    const checked = selectedGroups.includes(g.id) ? 'checked' : '';
+    return `<label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:5px 10px; border-radius:20px; border:1.5px solid ${checked ? g.color : 'var(--outline-variant)'}; background:${checked ? g.color+'18' : '#fff'}; font-size:12px; font-weight:600; color:${checked ? g.color : 'var(--on-surface-variant)'}; transition:all 0.15s;" id="group-label-${g.id}">
+      <input type="checkbox" value="${g.id}" ${checked} style="display:none;" onchange="styleGroupCheckbox('${g.id}','${g.color}')">
+      <span class="group-dot" style="background:${g.color}; width:8px; height:8px;"></span>
+      ${g.name}
+    </label>`;
+  }).join('');
   if (id) {
     const s = state.students.find(x => x.id === id);
     document.getElementById('s-name').value = s.name;
     document.getElementById('s-lastname').value = s.lastname;
     document.getElementById('s-id').value = s.studentId;
-    document.getElementById('s-group').value = s.group;
     document.getElementById('s-email').value = s.email || '';
     document.getElementById('s-status').value = s.status;
   } else {
@@ -851,20 +866,35 @@ function openStudentModal(id) {
   openModal('student-modal');
 }
 
+function styleGroupCheckbox(gid, color) {
+  const lbl = document.getElementById('group-label-' + gid);
+  const cb = lbl.querySelector('input');
+  if (cb.checked) {
+    lbl.style.borderColor = color;
+    lbl.style.background = color + '18';
+    lbl.style.color = color;
+  } else {
+    lbl.style.borderColor = 'var(--outline-variant)';
+    lbl.style.background = '#fff';
+    lbl.style.color = 'var(--on-surface-variant)';
+  }
+}
+
 function editStudent(id) { openStudentModal(id); }
 
 function saveStudent() {
   const name = document.getElementById('s-name').value.trim();
   const lastname = document.getElementById('s-lastname').value.trim();
   const studentId = document.getElementById('s-id').value.trim();
-  const group = document.getElementById('s-group').value;
-  if (!name || !lastname || !studentId || !group) { alert('Completa todos los campos obligatorios'); return; }
+  const groups = Array.from(document.querySelectorAll('#s-groups-container input[type="checkbox"]:checked')).map(cb => cb.value);
+  if (!name || !lastname || !studentId) { alert('Completa todos los campos obligatorios'); return; }
+  if (!groups.length) { alert('Selecciona al menos un grupo o materia'); return; }
   if (state.currentEditId) {
     const s = state.students.find(x => x.id === state.currentEditId);
-    Object.assign(s, { name, lastname, studentId, group, email: document.getElementById('s-email').value, status: document.getElementById('s-status').value });
+    Object.assign(s, { name, lastname, studentId, groups, email: document.getElementById('s-email').value, status: document.getElementById('s-status').value });
     logActivity(`✏️ Alumno editado — ${lastname}, ${name}`);
   } else {
-    state.students.push({ id: nextStudentId++, name, lastname, studentId, group, email: document.getElementById('s-email').value, status: document.getElementById('s-status').value });
+    state.students.push({ id: nextStudentId++, name, lastname, studentId, groups, email: document.getElementById('s-email').value, status: document.getElementById('s-status').value });
     logActivity(`👤 Alumno agregado — ${lastname}, ${name}`);
   }
   closeModal('student-modal');
@@ -1030,17 +1060,23 @@ function confirmBulkImport() {
   const valid = bulkParsedStudents.filter(s => !s.error);
   if (!valid.length) return;
 
-  let added = 0;
+  let added = 0, enrolled = 0;
   valid.forEach(s => {
-    // Skip duplicates by matricula
     const exists = state.students.find(x => x.studentId === s.matricula);
-    if (exists) return;
+    if (exists) {
+      // Already exists: just add the group if not already enrolled
+      if (!(exists.groups || []).includes(gid)) {
+        exists.groups = [...(exists.groups || []), gid];
+        enrolled++;
+      }
+      return;
+    }
     state.students.push({
       id: nextStudentId++,
       name: s.nombre,
       lastname: s.apellido,
       studentId: s.matricula,
-      group: gid,
+      groups: [gid],
       email: '',
       status: 'Activo'
     });
@@ -1048,8 +1084,9 @@ function confirmBulkImport() {
   });
 
   const g = state.groups.find(x => x.id === gid);
-  logActivity(`📋 Alta masiva: ${added} alumno(s) en ${g ? g.name : gid}`);
-  showToast(`${added} alumno(s) importado(s) correctamente`);
+  const msg = [added ? `${added} nuevo(s)` : '', enrolled ? `${enrolled} inscrito(s) a nueva materia` : ''].filter(Boolean).join(', ');
+  logActivity(`📋 Alta masiva: ${msg} en ${g ? g.name : gid}`);
+  showToast(`${msg || 'Sin cambios'} — ${g ? g.name : ''}`);
   closeModal('bulk-modal');
   clearBulkPreview();
   renderStudentsTable();
@@ -1097,7 +1134,7 @@ function renderGradeTable() {
   const wrap = document.getElementById('grade-table-wrap');
   if (!gid) { wrap.innerHTML = '<div class="empty-state"><p>Selecciona un grupo</p></div>'; return; }
   const group = state.groups.find(g => g.id === gid);
-  const students = state.students.filter(s => s.group === gid);
+  const students = state.students.filter(s => (s.groups || []).includes(gid));
   const config = state.evalConfigs[gid] || [];
   if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
 
@@ -1119,37 +1156,11 @@ function renderGradeTable() {
   tbody += '</tbody>';
   wrap.innerHTML = `<table>${thead}${tbody}</table>`;
 }
-{
+
+function sortGradeStudentsAZ() {
   state.students.sort((a, b) => (a.lastname + a.name).localeCompare(b.lastname + b.name));
   renderGradeTable();
   showToast('Alumnos ordenados A-Z');
-}
-
-function renderGradeTable() {
-  const gid = document.getElementById('grade-group-sel').value;
-  const wrap = document.getElementById('grade-table-wrap');
-  if (!gid) { wrap.innerHTML = '<div class="empty-state"><p>Selecciona un grupo</p></div>'; return; }
-  const students = state.students.filter(s => s.group === gid);
-  const config = state.evalConfigs[gid] || [];
-  if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
-
-  let thead = '<thead><tr><th>#</th><th>Alumno</th>';
-  config.forEach((ev, i) => { thead += `<th>${ev.name}<br><small style="color:var(--outline);font-weight:400">${ev.weight}%</small></th>`; });
-  thead += '<th>Promedio</th></tr></thead>';
-
-  let tbody = '<tbody>';
-  students.forEach((s, si) => {
-    tbody += `<tr><td style="color:var(--outline);">${si+1}</td><td><strong>${s.lastname}, ${s.name}</strong></td>`;
-    config.forEach((ev, ei) => {
-      const key = `${s.id}_${gid}_${ei}`;
-      const val = state.grades[key] !== undefined ? state.grades[key] : '';
-      tbody += `<td><input class="grade-input" type="number" min="0" max="10" step="0.1" value="${val}" data-key="${key}" oninput="updateGradePreview(this,${s.id},'${gid}')"></td>`;
-    });
-    const avg = calcStudentAvg(s.id, gid);
-    tbody += `<td id="avg-${s.id}-${gid}" style="font-weight:700; color:var(--primary);">${avg !== null ? avg.toFixed(1) : '—'}</td></tr>`;
-  });
-  tbody += '</tbody>';
-  wrap.innerHTML = `<table>${thead}${tbody}</table>`;
 }
 
 function updateGradePreview(input, sid, gid) {
@@ -1271,26 +1282,20 @@ function generateAttendance() {
 
   const startD = new Date(start + 'T00:00:00');
   const endD = new Date(end + 'T00:00:00');
-  const diffMs = endD - startD;
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const diffDays = (endD - startD) / (1000 * 60 * 60 * 24);
   if (diffDays > 153) { alert('El período no puede ser mayor a 5 meses (aproximadamente 153 días)'); return; }
 
-  const students = state.students.filter(s => s.group === gid);
+  const students = state.students.filter(s => (s.groups || []).includes(gid));
   if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
 
   const dates = getDatesInRange(start, end);
-
-  const affectsGrade = document.getElementById('att-affects-grade').checked;
-  const gradePct = parseInt(document.getElementById('att-grade-pct').value) || 10;
 
   let html = `<table class="att-table"><thead><tr><th style="white-space:nowrap;">Alumno</th>`;
   dates.forEach(d => {
     const dt = new Date(d + 'T00:00:00');
     html += `<th style="font-size:11px; text-align:center;">${dt.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'})}</th>`;
   });
-  html += '<th>% Asist.</th>';
-  if (affectsGrade) html += `<th>Cal. Asist.<br><small style="font-weight:400; color:var(--outline);">${gradePct}% peso</small></th>`;
-  html += '</tr></thead><tbody>';
+  html += '<th>% Asist.</th></tr></thead><tbody>';
 
   students.forEach(s => {
     html += `<tr><td style="white-space:nowrap; font-size:13px;"><strong>${s.lastname}, ${s.name}</strong></td>`;
@@ -1299,7 +1304,7 @@ function generateAttendance() {
       const val = state.attendance[key] || 'P';
       state.attendance[key] = val;
       html += `<td class="att-cell">
-        <select class="att-select att-sel-${val}" id="att-${key}" onchange="changeAtt('${key}', this)">
+        <select class="att-select" id="att-${key}" onchange="changeAtt('${key}', this)">
           <option value="P" ${val==='P'?'selected':''}>P</option>
           <option value="A" ${val==='A'?'selected':''}>A</option>
           <option value="T" ${val==='T'?'selected':''}>T</option>
@@ -1308,18 +1313,12 @@ function generateAttendance() {
     });
     const pct = calcAttendance(s.id, gid, dates);
     html += `<td id="attpct-${s.id}-${gid}" style="font-weight:700; font-size:13px; color:${pct >= 80 ? 'var(--success)' : 'var(--error)'};">${pct}%</td>`;
-    if (affectsGrade) {
-      const attScore = pct / 10; // converts 0-100% to 0-10 grade
-      html += `<td id="attgrade-${s.id}-${gid}" style="font-weight:700; font-size:13px; color:var(--primary);">${attScore.toFixed(1)}</td>`;
-    }
     html += '</tr>';
   });
   html += '</tbody></table>';
   wrap.innerHTML = html;
 
-  // Apply select styling
   document.querySelectorAll('.att-select').forEach(sel => styleAttSelect(sel));
-
   document.getElementById('att-legend').style.display = 'flex';
   logActivity(`📅 Lista de asistencia generada — ${state.groups.find(g=>g.id===gid)?.name}`);
 }
@@ -1383,7 +1382,7 @@ function renderReport() {
   const wrap = document.getElementById('report-content');
   if (!gid) { wrap.innerHTML = '<div class="empty-state"><p>Selecciona un grupo</p></div>'; return; }
   const group = state.groups.find(g => g.id === gid);
-  const students = state.students.filter(s => s.group === gid);
+  const students = state.students.filter(s => (s.groups || []).includes(gid));
   if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>Sin alumnos en este grupo</p></div>'; return; }
 
   const avgs = students.map(s => ({ ...s, avg: calcStudentAvg(s.id, gid) })).filter(s => s.avg !== null);
@@ -1464,8 +1463,10 @@ function renderReport() {
 function renderDashboard() {
   const allAvgs = [];
   state.students.forEach(s => {
-    const avg = calcStudentAvg(s.id, s.group);
-    if (avg !== null) allAvgs.push(avg);
+    (s.groups || []).forEach(gid => {
+      const avg = calcStudentAvg(s.id, gid);
+      if (avg !== null) allAvgs.push(avg);
+    });
   });
   const globalAvg = allAvgs.length ? allAvgs.reduce((a,b)=>a+b,0)/allAvgs.length : null;
   document.getElementById('stat-avg').textContent = globalAvg !== null ? globalAvg.toFixed(1) : '—';
