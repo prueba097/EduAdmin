@@ -329,6 +329,10 @@
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v12M4 14l-2-2M4 14l2-2M12 2l-2 2M12 2l2 2M8 6h6M8 10h4M8 14h2"/></svg>
           Ordenar A-Z
         </button>
+        <button class="btn btn-secondary btn-sm" onclick="populateGroupSelect('bulk-group-sel'); openModal('bulk-modal')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h12M8 2v8M4 6l4-4 4 4"/></svg>
+          Alta masiva
+        </button>
         <button class="btn btn-primary btn-sm" onclick="openStudentModal()">+ Agregar alumno</button>
       </div>
       <div class="card" style="padding:0; overflow:hidden;">
@@ -364,20 +368,7 @@
         <button class="btn btn-ghost btn-sm" onclick="openEvalConfig()">⚙ Configurar evaluaciones</button>
         <button class="btn btn-primary btn-sm" onclick="saveGrades()">💾 Guardar calificaciones</button>
       </div>
-      <div class="card" style="margin-bottom:12px; padding:14px 20px;">
-        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--on-surface);">
-            <input type="checkbox" id="grade-att-affects" onchange="toggleGradeAttOptions()" style="width:auto; accent-color:var(--primary);">
-            La asistencia afecta la calificación
-          </label>
-          <div id="grade-att-pct-wrap" style="display:none; align-items:center; gap:8px;">
-            <label style="margin:0; font-size:12px;">Porcentaje de impacto:</label>
-            <input type="number" id="grade-att-pct" min="1" max="50" value="10" style="width:70px;" oninput="renderGradeTable()">
-            <span style="font-size:12px; color:var(--outline);">%</span>
-            <span style="font-size:11px; color:var(--on-surface-variant);">La asistencia se toma del módulo de Asistencias</span>
-          </div>
-        </div>
-      </div>
+
       <div class="card" style="padding:0; overflow:hidden;">
         <div class="table-wrapper" id="grade-table-wrap">
           <div class="empty-state">
@@ -410,19 +401,6 @@
           </div>
           <div class="form-group" style="align-self:end;">
             <button class="btn btn-primary" onclick="generateAttendance()">Generar lista</button>
-          </div>
-        </div>
-        <hr class="divider">
-        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--on-surface);">
-            <input type="checkbox" id="att-affects-grade" onchange="toggleAttGradeOptions()" style="width:auto; accent-color:var(--primary);">
-            La asistencia afecta la calificación del alumno
-          </label>
-          <div id="att-grade-pct-wrap" style="display:none; align-items:center; gap:8px;">
-            <label style="margin:0; font-size:12px;">Porcentaje que afecta:</label>
-            <input type="number" id="att-grade-pct" min="1" max="50" value="10" style="width:70px;" oninput="updateAttGradeInfo()">
-            <span style="font-size:12px; color:var(--outline);">%</span>
-            <span id="att-grade-info" style="font-size:11px; color:var(--primary); background:var(--primary-container); padding:3px 8px; border-radius:9999px;"></span>
           </div>
         </div>
       </div>
@@ -561,6 +539,81 @@
   </div>
 </div>
 
+<!-- Bulk Import Modal -->
+<div class="modal-overlay" id="bulk-modal">
+  <div class="modal" style="width:640px;">
+    <div class="modal-title">Alta masiva de alumnos</div>
+
+    <div class="tabs" style="margin-bottom:16px;">
+      <div class="tab active" id="bulk-tab-text" onclick="switchBulkTab('text')">✏️ Por texto</div>
+      <div class="tab" id="bulk-tab-excel" onclick="switchBulkTab('excel')">📊 Por Excel</div>
+    </div>
+
+    <!-- TEXT TAB -->
+    <div id="bulk-panel-text">
+      <p style="font-size:12px; color:var(--on-surface-variant); margin-bottom:10px;">
+        Escribe un alumno por línea con el formato: <strong>Nombre Apellido Matrícula</strong><br>
+        Ejemplo: <code style="background:var(--surface-low); padding:2px 6px; border-radius:3px;">Jose Alberto IEL23904</code>
+      </p>
+      <textarea id="bulk-text" rows="10" placeholder="Jose Alberto IEL23904&#10;Daniel Castro IEL233424&#10;Fernando Alonso AM244" style="width:100%; font-family:monospace; font-size:13px;"></textarea>
+    </div>
+
+    <!-- EXCEL TAB -->
+    <div id="bulk-panel-excel" style="display:none;">
+      <p style="font-size:12px; color:var(--on-surface-variant); margin-bottom:12px;">
+        Sube un archivo <strong>.xlsx</strong> o <strong>.csv</strong>. Las columnas deben seguir el orden:<br>
+        <strong>Columna A:</strong> Nombre &nbsp;|&nbsp; <strong>Columna B:</strong> Apellido &nbsp;|&nbsp; <strong>Columna C:</strong> Matrícula<br>
+        La primera fila puede ser encabezado (se detecta automáticamente).
+      </p>
+      <label style="display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px dashed var(--outline-variant); border-radius:var(--radius-lg); padding:32px; cursor:pointer; gap:10px; transition:border 0.2s;" id="excel-drop-zone">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        <span style="font-size:13px; font-weight:600; color:var(--primary);">Arrastra tu archivo aquí o haz clic para seleccionar</span>
+        <span style="font-size:11px; color:var(--outline);">.xlsx, .xls, .csv — máx. 5 MB</span>
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleExcelFile(this)">
+      </label>
+      <div id="excel-file-name" style="margin-top:10px; font-size:12px; color:var(--outline); text-align:center;"></div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div id="bulk-preview" style="margin-top:16px; display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <div class="card-title" style="font-size:13px;">Vista previa <span id="bulk-count" style="color:var(--outline); font-weight:400;"></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="clearBulkPreview()">✕ Limpiar</button>
+      </div>
+      <div style="max-height:180px; overflow-y:auto; border:1px solid var(--outline-variant); border-radius:var(--radius);">
+        <table style="width:100%;">
+          <thead><tr>
+            <th style="padding:8px 10px; font-size:11px; background:var(--surface-low); text-align:left;">#</th>
+            <th style="padding:8px 10px; font-size:11px; background:var(--surface-low); text-align:left;">Nombre</th>
+            <th style="padding:8px 10px; font-size:11px; background:var(--surface-low); text-align:left;">Apellido</th>
+            <th style="padding:8px 10px; font-size:11px; background:var(--surface-low); text-align:left;">Matrícula</th>
+            <th style="padding:8px 10px; font-size:11px; background:var(--surface-low); text-align:left;">Estado</th>
+          </tr></thead>
+          <tbody id="bulk-preview-tbody"></tbody>
+        </table>
+      </div>
+      <div id="bulk-errors" style="margin-top:8px; font-size:12px; color:var(--error);"></div>
+    </div>
+
+    <!-- GROUP SELECTOR -->
+    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--outline-variant);">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <label style="font-size:13px; font-weight:700; color:var(--on-surface); white-space:nowrap;">Asignar al grupo:</label>
+        <select id="bulk-group-sel" style="flex:1; min-width:200px;">
+          <option value="">— Seleccionar grupo —</option>
+        </select>
+      </div>
+      <p style="font-size:11px; color:var(--outline); margin-top:6px;">Todos los alumnos importados quedarán asignados al grupo seleccionado.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('bulk-modal'); clearBulkPreview();">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="parseBulkPreview()" id="bulk-preview-btn">👁 Vista previa</button>
+      <button class="btn btn-primary" onclick="confirmBulkImport()" id="bulk-confirm-btn" disabled>Importar alumnos</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==================== STATE ====================
 let state = {
@@ -657,7 +710,7 @@ function renderGroups() {
 }
 
 function populateGroupSelects() {
-  ['student-group-filter','s-group','grade-group-sel','att-group-sel','report-group-sel'].forEach(id => {
+  ['student-group-filter','s-group','grade-group-sel','att-group-sel','report-group-sel','bulk-group-sel'].forEach(id => {
     populateGroupSelect(id);
   });
 }
@@ -819,8 +872,211 @@ function saveStudent() {
   renderDashboard();
 }
 
-function deleteStudent(id) {
-  state.deleteTargetId = id;
+// ==================== BULK IMPORT ====================
+let bulkParsedStudents = [];
+let currentBulkTab = 'text';
+
+function switchBulkTab(tab) {
+  currentBulkTab = tab;
+  document.getElementById('bulk-tab-text').classList.toggle('active', tab === 'text');
+  document.getElementById('bulk-tab-excel').classList.toggle('active', tab === 'excel');
+  document.getElementById('bulk-panel-text').style.display = tab === 'text' ? '' : 'none';
+  document.getElementById('bulk-panel-excel').style.display = tab === 'excel' ? '' : 'none';
+  clearBulkPreview();
+}
+
+function parseBulkPreview() {
+  if (currentBulkTab === 'text') parseBulkText();
+}
+
+function parseBulkText() {
+  const raw = document.getElementById('bulk-text').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  bulkParsedStudents = [];
+  const errors = [];
+
+  lines.forEach((line, i) => {
+    // Remove commas used as separators between entries
+    const clean = line.replace(/,\s*$/, '').trim();
+    const parts = clean.split(/\s+/);
+    if (parts.length < 3) {
+      errors.push(`Línea ${i+1}: formato incorrecto — "${line}" (se necesita Nombre Apellido Matrícula)`);
+      bulkParsedStudents.push({ error: true, raw: line });
+      return;
+    }
+    // Last token = matricula, second-to-last = apellido, rest = nombre
+    const matricula = parts[parts.length - 1];
+    const apellido = parts[parts.length - 2];
+    const nombre = parts.slice(0, parts.length - 2).join(' ');
+    bulkParsedStudents.push({ nombre, apellido, matricula, error: false });
+  });
+
+  renderBulkPreview(errors);
+}
+
+function handleExcelFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('excel-file-name').textContent = `📄 ${file.name}`;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    // Use SheetJS via CDN
+    if (typeof XLSX === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => readXLSX(file);
+      document.head.appendChild(s);
+    } else {
+      readXLSX(file);
+    }
+  }
+}
+
+function readXLSX(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      processSheetRows(rows);
+    } catch(err) {
+      alert('Error al leer el archivo Excel: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseCSV(text) {
+  const rows = text.split('\n').map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+  processSheetRows(rows);
+}
+
+function processSheetRows(rows) {
+  bulkParsedStudents = [];
+  const errors = [];
+  // Detect if first row is header
+  const firstRow = rows[0] || [];
+  const isHeader = firstRow.some(c => /nombre|apellido|matrícula|matricula|name/i.test(c));
+  const dataRows = isHeader ? rows.slice(1) : rows;
+
+  dataRows.forEach((cols, i) => {
+    if (cols.every(c => !c)) return; // skip empty rows
+    const nombre = (cols[0] || '').trim();
+    const apellido = (cols[1] || '').trim();
+    const matricula = (cols[2] || '').trim();
+    if (!nombre || !apellido || !matricula) {
+      errors.push(`Fila ${i + (isHeader?2:1)}: datos incompletos`);
+      bulkParsedStudents.push({ error: true, raw: cols.join(' | ') });
+      return;
+    }
+    bulkParsedStudents.push({ nombre, apellido, matricula, error: false });
+  });
+
+  renderBulkPreview(errors);
+}
+
+function renderBulkPreview(errors) {
+  const preview = document.getElementById('bulk-preview');
+  const tbody = document.getElementById('bulk-preview-tbody');
+  const errDiv = document.getElementById('bulk-errors');
+  const count = document.getElementById('bulk-count');
+  const confirmBtn = document.getElementById('bulk-confirm-btn');
+
+  const valid = bulkParsedStudents.filter(s => !s.error);
+  preview.style.display = bulkParsedStudents.length > 0 ? '' : 'none';
+  count.textContent = `— ${valid.length} válido(s)${errors.length ? ', ' + errors.length + ' con error' : ''}`;
+
+  tbody.innerHTML = bulkParsedStudents.map((s, i) => {
+    if (s.error) {
+      return `<tr style="background:#fff4f4;">
+        <td style="padding:7px 10px; color:var(--outline); font-size:12px;">${i+1}</td>
+        <td colspan="3" style="padding:7px 10px; font-size:12px; color:var(--error);">⚠ ${s.raw}</td>
+        <td style="padding:7px 10px;"><span class="pill pill-d">Error</span></td>
+      </tr>`;
+    }
+    return `<tr>
+      <td style="padding:7px 10px; color:var(--outline); font-size:12px;">${i+1}</td>
+      <td style="padding:7px 10px; font-size:13px;">${s.nombre}</td>
+      <td style="padding:7px 10px; font-size:13px;">${s.apellido}</td>
+      <td style="padding:7px 10px; font-size:13px; font-family:monospace;">${s.matricula}</td>
+      <td style="padding:7px 10px;"><span class="pill pill-a">OK</span></td>
+    </tr>`;
+  }).join('');
+
+  errDiv.innerHTML = errors.length ? errors.map(e => `• ${e}`).join('<br>') : '';
+  confirmBtn.disabled = valid.length === 0;
+}
+
+function clearBulkPreview() {
+  bulkParsedStudents = [];
+  document.getElementById('bulk-preview').style.display = 'none';
+  document.getElementById('bulk-confirm-btn').disabled = true;
+  document.getElementById('bulk-text').value = '';
+  document.getElementById('bulk-errors').innerHTML = '';
+  const fi = document.getElementById('excel-file-input');
+  if (fi) fi.value = '';
+  document.getElementById('excel-file-name').textContent = '';
+}
+
+function confirmBulkImport() {
+  const gid = document.getElementById('bulk-group-sel').value;
+  if (!gid) { alert('Selecciona un grupo para asignar los alumnos'); return; }
+  const valid = bulkParsedStudents.filter(s => !s.error);
+  if (!valid.length) return;
+
+  let added = 0;
+  valid.forEach(s => {
+    // Skip duplicates by matricula
+    const exists = state.students.find(x => x.studentId === s.matricula);
+    if (exists) return;
+    state.students.push({
+      id: nextStudentId++,
+      name: s.nombre,
+      lastname: s.apellido,
+      studentId: s.matricula,
+      group: gid,
+      email: '',
+      status: 'Activo'
+    });
+    added++;
+  });
+
+  const g = state.groups.find(x => x.id === gid);
+  logActivity(`📋 Alta masiva: ${added} alumno(s) en ${g ? g.name : gid}`);
+  showToast(`${added} alumno(s) importado(s) correctamente`);
+  closeModal('bulk-modal');
+  clearBulkPreview();
+  renderStudentsTable();
+  renderDashboard();
+  populateGroupSelects();
+}
+
+// Excel drop zone
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('excel-drop-zone');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--primary)'; });
+  dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--outline-variant)'; });
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.style.borderColor = 'var(--outline-variant)';
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      document.getElementById('excel-file-input').files = e.dataTransfer.files;
+      handleExcelFile({ files: [file] });
+      document.getElementById('excel-file-name').textContent = `📄 ${file.name}`;
+    }
+  });
+  dz.addEventListener('click', () => document.getElementById('excel-file-input').click());
+});
+
+function deleteStudent(id) {  state.deleteTargetId = id;
   const s = state.students.find(x => x.id === id);
   document.getElementById('delete-name').textContent = `${s.lastname}, ${s.name}`;
   openModal('delete-modal');
@@ -836,19 +1092,6 @@ function confirmDelete() {
 }
 
 // ==================== GRADES ====================
-function toggleGradeAttOptions() {
-  const cb = document.getElementById('grade-att-affects');
-  const wrap = document.getElementById('grade-att-pct-wrap');
-  wrap.style.display = cb.checked ? 'flex' : 'none';
-  renderGradeTable();
-}
-
-function sortGradeStudentsAZ() {
-  state.students.sort((a, b) => (a.lastname + a.name).localeCompare(b.lastname + b.name));
-  renderGradeTable();
-  showToast('Alumnos ordenados A-Z');
-}
-
 function renderGradeTable() {
   const gid = document.getElementById('grade-group-sel').value;
   const wrap = document.getElementById('grade-table-wrap');
@@ -858,12 +1101,8 @@ function renderGradeTable() {
   const config = state.evalConfigs[gid] || [];
   if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
 
-  const attAffects = document.getElementById('grade-att-affects')?.checked;
-  const attPct = attAffects ? (parseInt(document.getElementById('grade-att-pct')?.value) || 10) : 0;
-
   let thead = '<thead><tr><th>#</th><th>Alumno</th>';
   config.forEach((ev, i) => { thead += `<th>${ev.name}<br><small style="color:var(--outline);font-weight:400">${ev.weight}%</small></th>`; });
-  if (attAffects) thead += `<th>Asistencia<br><small style="color:var(--outline);font-weight:400">${attPct}% impacto</small></th>`;
   thead += '<th>Promedio</th></tr></thead>';
 
   let tbody = '<tbody>';
@@ -874,18 +1113,42 @@ function renderGradeTable() {
       const val = state.grades[key] !== undefined ? state.grades[key] : '';
       tbody += `<td><input class="grade-input" type="number" min="0" max="10" step="0.1" value="${val}" data-key="${key}" oninput="updateGradePreview(this,${s.id},'${gid}')"></td>`;
     });
-    if (attAffects) {
-      const attKeys = Object.keys(state.attendance).filter(k => k.startsWith(`${s.id}_${gid}_`));
-      const dates = attKeys.map(k => k.split('_')[2]);
-      const pct = dates.length ? calcAttendance(s.id, gid, dates) : null;
-      const attScore = pct !== null ? (pct / 10).toFixed(1) : '—';
-      tbody += `<td style="text-align:center; font-weight:600; color:var(--primary);">${attScore}</td>`;
-    }
-    const avg = calcStudentAvgWithAtt(s.id, gid, attAffects, attPct);
+    const avg = calcStudentAvg(s.id, gid);
     tbody += `<td id="avg-${s.id}-${gid}" style="font-weight:700; color:var(--primary);">${avg !== null ? avg.toFixed(1) : '—'}</td></tr>`;
   });
   tbody += '</tbody>';
+  wrap.innerHTML = `<table>${thead}${tbody}</table>`;
+}
+{
+  state.students.sort((a, b) => (a.lastname + a.name).localeCompare(b.lastname + b.name));
+  renderGradeTable();
+  showToast('Alumnos ordenados A-Z');
+}
 
+function renderGradeTable() {
+  const gid = document.getElementById('grade-group-sel').value;
+  const wrap = document.getElementById('grade-table-wrap');
+  if (!gid) { wrap.innerHTML = '<div class="empty-state"><p>Selecciona un grupo</p></div>'; return; }
+  const students = state.students.filter(s => s.group === gid);
+  const config = state.evalConfigs[gid] || [];
+  if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
+
+  let thead = '<thead><tr><th>#</th><th>Alumno</th>';
+  config.forEach((ev, i) => { thead += `<th>${ev.name}<br><small style="color:var(--outline);font-weight:400">${ev.weight}%</small></th>`; });
+  thead += '<th>Promedio</th></tr></thead>';
+
+  let tbody = '<tbody>';
+  students.forEach((s, si) => {
+    tbody += `<tr><td style="color:var(--outline);">${si+1}</td><td><strong>${s.lastname}, ${s.name}</strong></td>`;
+    config.forEach((ev, ei) => {
+      const key = `${s.id}_${gid}_${ei}`;
+      const val = state.grades[key] !== undefined ? state.grades[key] : '';
+      tbody += `<td><input class="grade-input" type="number" min="0" max="10" step="0.1" value="${val}" data-key="${key}" oninput="updateGradePreview(this,${s.id},'${gid}')"></td>`;
+    });
+    const avg = calcStudentAvg(s.id, gid);
+    tbody += `<td id="avg-${s.id}-${gid}" style="font-weight:700; color:var(--primary);">${avg !== null ? avg.toFixed(1) : '—'}</td></tr>`;
+  });
+  tbody += '</tbody>';
   wrap.innerHTML = `<table>${thead}${tbody}</table>`;
 }
 
@@ -893,9 +1156,7 @@ function updateGradePreview(input, sid, gid) {
   const key = input.dataset.key;
   const val = parseFloat(input.value);
   if (!isNaN(val)) state.grades[key] = val;
-  const attAffects = document.getElementById('grade-att-affects')?.checked;
-  const attPct = attAffects ? (parseInt(document.getElementById('grade-att-pct')?.value) || 10) : 0;
-  const avg = calcStudentAvgWithAtt(sid, gid, attAffects, attPct);
+  const avg = calcStudentAvg(sid, gid);
   const cell = document.getElementById(`avg-${sid}-${gid}`);
   if (cell) cell.textContent = avg !== null ? avg.toFixed(1) : '—';
 }
@@ -914,10 +1175,6 @@ function saveGrades() {
 }
 
 function calcStudentAvg(sid, gid) {
-  return calcStudentAvgWithAtt(sid, gid, false, 0);
-}
-
-function calcStudentAvgWithAtt(sid, gid, attAffects, attPct) {
   const config = state.evalConfigs[gid] || [];
   if (!config.length) return null;
   let total = 0, totalWeight = 0;
@@ -929,19 +1186,7 @@ function calcStudentAvgWithAtt(sid, gid, attAffects, attPct) {
     }
   });
   if (totalWeight === 0) return null;
-  let baseAvg = total / totalWeight;
-  if (attAffects && attPct > 0) {
-    const attKeys = Object.keys(state.attendance).filter(k => k.startsWith(`${sid}_${gid}_`));
-    const dates = attKeys.map(k => k.split('_')[2]);
-    if (dates.length > 0) {
-      const pct = calcAttendance(sid, gid, dates);
-      const attScore = pct / 10; // 0-10 scale
-      const evalWeight = (100 - attPct) / 100;
-      const attWeight = attPct / 100;
-      baseAvg = baseAvg * evalWeight + attScore * attWeight;
-    }
-  }
-  return baseAvg;
+  return total / totalWeight;
 }
 
 function gradePill(avg) {
@@ -1015,19 +1260,6 @@ function saveEvalConfig() {
 
 // ==================== ATTENDANCE ====================
 function updateAttCols() {}
-
-function toggleAttGradeOptions() {
-  const cb = document.getElementById('att-affects-grade');
-  const wrap = document.getElementById('att-grade-pct-wrap');
-  wrap.style.display = cb.checked ? 'flex' : 'none';
-  updateAttGradeInfo();
-}
-
-function updateAttGradeInfo() {
-  const pct = parseInt(document.getElementById('att-grade-pct').value) || 10;
-  const info = document.getElementById('att-grade-info');
-  info.textContent = `Nota: ${pct}% de la calificación final depende de asistencia`;
-}
 
 function generateAttendance() {
   const gid = document.getElementById('att-group-sel').value;
