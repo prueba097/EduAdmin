@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduAdmin — Sistema de Gestión Escolar</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #004ac6;
+    --primary-dark: #003ea8;
+    --primary-light: #2563eb;
+    --primary-container: #dbe1ff;
+    --primary-text: #eeefff;
+    --surface: #f9f9ff;
+    --surface-low: #f0f3ff;
+    --surface-container: #e7eeff;
+    --surface-high: #dee8ff;
+    --surface-highest: #d8e3fb;
+    --on-surface: #111c2d;
+    --on-surface-variant: #434655;
+    --outline: #737686;
+    --outline-variant: #c3c6d7;
+    --secondary: #505f76;
+    --secondary-container: #d0e1fb;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+    --success: #1a6b3a;
+    --success-bg: #d3f0df;
+    --warning: #7a4f00;
+    --warning-bg: #ffeeba;
+    --sidebar-w: 260px;
+    --header-h: 56px;
+    --radius: 4px;
+    --radius-lg: 8px;
+    --shadow: 0 1px 3px rgba(0,74,198,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Public Sans', sans-serif; background: var(--surface); color: var(--on-surface); font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: var(--sidebar-w); background: #fff; border-right: 1px solid var(--outline-variant);
+    display: flex; flex-direction: column; height: 100vh; overflow-y: auto; flex-shrink: 0;
+  }
+  .sidebar-brand { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; align-items: center; gap: 10px; }
+  .brand-icon { width: 32px; height: 32px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; }
+  .brand-name { font-weight: 700; font-size: 15px; color: var(--primary); }
+  .brand-sub { font-size: 11px; color: var(--outline); }
+  .sidebar-section { padding: 12px 8px 4px; }
+  .sidebar-label { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--outline); padding: 0 8px; margin-bottom: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius);
+    cursor: pointer; color: var(--on-surface-variant); font-size: 13px; font-weight: 500;
+    transition: background 0.15s; position: relative;
+  }
+  .nav-item:hover { background: var(--surface-low); color: var(--primary); }
+  .nav-item.active { background: var(--primary-container); color: var(--primary); }
+  .nav-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+  .nav-badge { margin-left: auto; background: var(--primary); color: #fff; border-radius: 9999px; font-size: 10px; padding: 1px 6px; font-weight: 700; }
+  .group-chip {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius);
+    cursor: pointer; font-size: 13px; transition: background 0.15s; color: var(--on-surface-variant);
+  }
+  .group-chip:hover { background: var(--surface-low); }
+  .group-chip.active { background: var(--primary-container); color: var(--primary); font-weight: 600; }
+  .group-chip-actions { display: none; margin-left: auto; gap: 2px; }
+  .group-chip:hover .group-chip-actions { display: flex; }
+  .group-chip-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 11px; color: var(--outline); line-height: 1; }
+  .group-chip-btn:hover { background: var(--outline-variant); color: var(--on-surface); }
+  .group-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .sidebar-footer { margin-top: auto; padding: 12px; border-top: 1px solid var(--outline-variant); }
+  .user-row { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+
+  /* MAIN */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    height: var(--header-h); background: #fff; border-bottom: 1px solid var(--outline-variant);
+    display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0;
+  }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--on-surface); flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+  .btn-secondary:hover { background: var(--surface-low); }
+  .btn-ghost { background: transparent; color: var(--on-surface-variant); border: 1px solid var(--outline-variant); }
+  .btn-ghost:hover { background: var(--surface-low); }
+  .btn-danger { background: var(--error); color: #fff; }
+  .btn-danger:hover { background: #8e0000; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-icon { padding: 6px; }
+
+  #content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* CARDS */
+  .card { background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--on-surface); }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-lg); padding: 16px; }
+  .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--outline); margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--on-surface); }
+  .stat-sub { font-size: 12px; color: var(--outline); margin-top: 2px; }
+  .stat-accent { border-left: 3px solid var(--primary); }
+
+  /* TABLE */
+  .table-wrapper { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { position: sticky; top: 0; background: var(--surface-low); padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--outline); border-bottom: 1px solid var(--outline-variant); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid #f0f3ff; transition: background 0.1s; }
+  tbody tr:hover { background: var(--surface-low); }
+  tbody tr:nth-child(even) { background: rgba(0,74,198,0.02); }
+  tbody tr:nth-child(even):hover { background: var(--surface-low); }
+  td { padding: 10px 12px; color: var(--on-surface); vertical-align: middle; }
+  .td-actions { display: flex; gap: 6px; }
+
+  /* STATUS PILLS */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .pill-a { background: #d3f0df; color: #1a6b3a; }
+  .pill-b { background: #dbe1ff; color: #004ac6; }
+  .pill-c { background: #ffeeba; color: #7a4f00; }
+  .pill-d { background: #ffdad6; color: #ba1a1a; }
+  .pill-f { background: #ffdad6; color: #8e0000; }
+  .pill-pass { background: #d3f0df; color: #1a6b3a; }
+  .pill-inc { background: #ffeeba; color: #7a4f00; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-present { background: #1a6b3a; }
+  .dot-absent { background: #ba1a1a; }
+  .dot-tardy { background: #e08000; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--on-surface-variant); }
+  input[type="text"], input[type="number"], input[type="date"], select, textarea {
+    padding: 8px 12px; border: 1px solid var(--outline-variant); border-radius: var(--radius);
+    font-family: inherit; font-size: 13px; color: var(--on-surface); background: #fff;
+    outline: none; transition: border 0.15s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border: 2px solid var(--primary); padding: 7px 11px; }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius-lg); padding: 28px; width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--on-surface); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* GRADE INPUTS */
+  .grade-input { width: 64px; padding: 5px 8px; text-align: center; font-weight: 600; }
+  .grade-cell { display: flex; align-items: center; gap: 8px; }
+
+  /* SEARCH & FILTER BAR */
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-box { position: relative; flex: 1; min-width: 180px; }
+  .search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--outline); }
+  .search-box input { padding-left: 34px; width: 100%; }
+
+  /* ATTENDANCE GRID */
+  .att-table th, .att-table td { padding: 8px 10px; }
+  .att-cell { text-align: center; cursor: pointer; }
+  .att-btn { width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; transition: transform 0.1s; }
+  .att-btn:active { transform: scale(0.9); }
+  .att-P { background: #d3f0df; color: #1a6b3a; }
+  .att-A { background: #ffdad6; color: #ba1a1a; }
+  .att-T { background: #ffeeba; color: #7a4f00; }
+
+  /* REPORT */
+  .report-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .progress-bar-bg { background: var(--outline-variant); border-radius: 9999px; height: 6px; flex: 1; margin: 0 10px; }
+  .progress-bar-fill { height: 100%; border-radius: 9999px; background: var(--primary); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--outline-variant); margin-bottom: 20px; }
+  .tab { padding: 10px 18px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--outline); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* SUBJECT CONFIG */
+  .eval-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-low); border-radius: var(--radius); margin-bottom: 8px; }
+  .eval-item input[type="text"] { flex: 1; }
+  .eval-item input[type="number"] { width: 80px; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--outline); }
+  .empty-state svg { opacity: 0.4; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--on-surface-variant); }
+  .empty-state span { font-size: 13px; }
+
+  /* SCORE SUMMARY */
+  .score-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+  .big-grade { font-size: 48px; font-weight: 700; color: var(--primary); }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--outline-variant); margin: 16px 0; }
+
+  /* EXAM SECTION */
+  .exam-period-badge { background: var(--primary-container); color: var(--primary); border-radius: var(--radius); padding: 4px 10px; font-size: 11px; font-weight: 700; }
+  .exam-final-badge { background: #ffdad6; color: var(--error); border-radius: var(--radius); padding: 4px 10px; font-size: 11px; font-weight: 700; }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">EA</div>
+    <div>
+      <div class="brand-name">EduAdmin</div>
+      <div class="brand-sub">Gestión Escolar</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Menú</div>
+    <div class="nav-item active" onclick="showView('dashboard')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      Panel general
+    </div>
+    <div class="nav-item" onclick="showView('students')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+      Estudiantes
+    </div>
+    <div class="nav-item" onclick="showView('grades')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h10a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1z"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+      Calificaciones
+    </div>
+    <div class="nav-item" onclick="showView('attendance')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="12" rx="1"/><path d="M5 1v4M11 1v4M1 7h14"/></svg>
+      Asistencia
+    </div>
+    <div class="nav-item" onclick="showView('reports')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12h2M5 8h2M8 5h2M11 2h2"/><rect x="1" y="1" width="14" height="14" rx="1"/></svg>
+      Reportes
+    </div>
+  </div>
+
+  <div class="sidebar-section" style="margin-top:8px;">
+    <div class="sidebar-label">Mis grupos / materias</div>
+    <div id="group-list"></div>
+    <div class="nav-item" onclick="openAddGroupModal()" style="margin-top:4px; color: var(--primary);">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v12M2 8h12"/></svg>
+      Agregar grupo
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="avatar">MR</div>
+      <div>
+        <div style="font-size:13px; font-weight:600;">Mtro. Ramírez</div>
+        <div style="font-size:11px; color:var(--outline);">Docente</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Panel general</div>
+    <div id="topbar-actions"></div>
+  </div>
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="stats-row">
+        <div class="stat-card stat-accent">
+          <div class="stat-label">Total Estudiantes</div>
+          <div class="stat-value" id="stat-students">0</div>
+          <div class="stat-sub">En todos los grupos</div>
+        </div>
+        <div class="stat-card" style="border-left:3px solid #1a6b3a;">
+          <div class="stat-label">Promedio general</div>
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-sub">Todos los grupos</div>
+        </div>
+        <div class="stat-card" style="border-left:3px solid #e08000;">
+          <div class="stat-label">Asistencia hoy</div>
+          <div class="stat-value" id="stat-att">—</div>
+          <div class="stat-sub">% de presentes</div>
+        </div>
+        <div class="stat-card" style="border-left:3px solid #004ac6;">
+          <div class="stat-label">Grupos activos</div>
+          <div class="stat-value" id="stat-groups">0</div>
+          <div class="stat-sub">Materias / secciones</div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Distribución de calificaciones</div></div>
+          <div id="grade-dist"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Actividad reciente</div></div>
+          <div id="activity-log" style="font-size:13px; color:var(--on-surface-variant);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="view" id="view-students">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="5"/><path d="M11 11l3 3"/></svg>
+          <input type="text" placeholder="Buscar alumno…" id="student-search" oninput="filterStudents()">
+        </div>
+        <select id="student-group-filter" onchange="filterStudents()" style="width:auto;">
+          <option value="">Todos los grupos</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="sortStudentsAZ()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v12M4 14l-2-2M4 14l2-2M12 2l-2 2M12 2l2 2M8 6h6M8 10h4M8 14h2"/></svg>
+          Ordenar A-Z
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openStudentModal()">+ Agregar alumno</button>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Matrícula</th>
+                <th>Grupo</th>
+                <th>Promedio</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="students-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRADES -->
+    <div class="view" id="view-grades">
+      <div class="toolbar">
+        <select id="grade-group-sel" onchange="renderGradeTable()" style="width:auto;">
+          <option value="">Seleccionar grupo…</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="sortGradeStudentsAZ()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v12M4 14l-2-2M4 14l2-2M12 2l-2 2M12 2l2 2M8 6h6M8 10h4M8 14h2"/></svg>
+          Ordenar A-Z
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="openEvalConfig()">⚙ Configurar evaluaciones</button>
+        <button class="btn btn-primary btn-sm" onclick="saveGrades()">💾 Guardar calificaciones</button>
+      </div>
+      <div class="card" style="margin-bottom:12px; padding:14px 20px;">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--on-surface);">
+            <input type="checkbox" id="grade-att-affects" onchange="toggleGradeAttOptions()" style="width:auto; accent-color:var(--primary);">
+            La asistencia afecta la calificación
+          </label>
+          <div id="grade-att-pct-wrap" style="display:none; align-items:center; gap:8px;">
+            <label style="margin:0; font-size:12px;">Porcentaje de impacto:</label>
+            <input type="number" id="grade-att-pct" min="1" max="50" value="10" style="width:70px;" oninput="renderGradeTable()">
+            <span style="font-size:12px; color:var(--outline);">%</span>
+            <span style="font-size:11px; color:var(--on-surface-variant);">La asistencia se toma del módulo de Asistencias</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrapper" id="grade-table-wrap">
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            <p>Sin grupo seleccionado</p>
+            <span>Elige un grupo para ver y capturar calificaciones</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="view" id="view-attendance">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:16px;">Configurar período de asistencia</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Grupo</label>
+            <select id="att-group-sel" onchange="updateAttCols()">
+              <option value="">Seleccionar…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha inicio</label>
+            <input type="date" id="att-start">
+          </div>
+          <div class="form-group">
+            <label>Fecha fin <span style="font-size:11px; color:var(--outline);">(máx. 5 meses)</span></label>
+            <input type="date" id="att-end">
+          </div>
+          <div class="form-group" style="align-self:end;">
+            <button class="btn btn-primary" onclick="generateAttendance()">Generar lista</button>
+          </div>
+        </div>
+        <hr class="divider">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--on-surface);">
+            <input type="checkbox" id="att-affects-grade" onchange="toggleAttGradeOptions()" style="width:auto; accent-color:var(--primary);">
+            La asistencia afecta la calificación del alumno
+          </label>
+          <div id="att-grade-pct-wrap" style="display:none; align-items:center; gap:8px;">
+            <label style="margin:0; font-size:12px;">Porcentaje que afecta:</label>
+            <input type="number" id="att-grade-pct" min="1" max="50" value="10" style="width:70px;" oninput="updateAttGradeInfo()">
+            <span style="font-size:12px; color:var(--outline);">%</span>
+            <span id="att-grade-info" style="font-size:11px; color:var(--primary); background:var(--primary-container); padding:3px 8px; border-radius:9999px;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrapper" id="att-table-wrap">
+          <div class="empty-state"><p>Configura el período y genera la lista de asistencia</p></div>
+        </div>
+      </div>
+      <div id="att-legend" style="display:none; margin-top:12px; display:flex; gap:16px; align-items:center; font-size:12px; flex-wrap:wrap;">
+        <span><span class="dot dot-present" style="display:inline-block; margin-right:4px;"></span>Presente (P)</span>
+        <span><span class="dot dot-absent" style="display:inline-block; margin-right:4px;"></span>Ausente (A)</span>
+        <span><span class="dot dot-tardy" style="display:inline-block; margin-right:4px;"></span>Tarde (T)</span>
+        <span style="color:var(--outline);">Usa el selector para cambiar el estado</span>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="view" id="view-reports">
+      <div class="toolbar">
+        <select id="report-group-sel" onchange="renderReport()" style="width:auto;">
+          <option value="">Seleccionar grupo…</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="printReport()">🖨 Imprimir reporte</button>
+      </div>
+      <div id="report-content">
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 17v-2m3 2v-4m3 4v-6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+          <p>Selecciona un grupo para generar el reporte</p>
+          <span>Verás promedios, distribución y rendimiento individual</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODALS -->
+<!-- Student Modal -->
+<div class="modal-overlay" id="student-modal">
+  <div class="modal">
+    <div class="modal-title" id="student-modal-title">Agregar estudiante</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nombre(s)</label>
+        <input type="text" id="s-name" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Apellidos</label>
+        <input type="text" id="s-lastname" placeholder="Apellido paterno y materno">
+      </div>
+      <div class="form-group">
+        <label>Matrícula</label>
+        <input type="text" id="s-id" placeholder="Ej: 2024001">
+      </div>
+      <div class="form-group">
+        <label>Grupo</label>
+        <select id="s-group"></select>
+      </div>
+      <div class="form-group">
+        <label>Correo (opcional)</label>
+        <input type="text" id="s-email" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="s-status">
+          <option value="Activo">Activo</option>
+          <option value="Irregular">Irregular</option>
+          <option value="Baja">Baja</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('student-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveStudent()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Group Modal -->
+<div class="modal-overlay" id="group-modal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-title" id="group-modal-title">Nuevo grupo / materia</div>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="form-group">
+        <label>Nombre del grupo o materia</label>
+        <input type="text" id="g-name" placeholder="Ej: Matemáticas 3°A">
+      </div>
+      <div class="form-group">
+        <label>Color identificador</label>
+        <select id="g-color">
+          <option value="#004ac6">Azul</option>
+          <option value="#1a6b3a">Verde</option>
+          <option value="#ba1a1a">Rojo</option>
+          <option value="#e08000">Naranja</option>
+          <option value="#6d3a9c">Morado</option>
+          <option value="#0f6e56">Teal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Número de evaluaciones parciales</label>
+        <input type="number" id="g-evals" value="3" min="1" max="10" placeholder="3">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('group-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="group-save-btn" onclick="saveGroup()">Crear grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Eval Config Modal -->
+<div class="modal-overlay" id="eval-modal">
+  <div class="modal" style="width:500px;">
+    <div class="modal-title">Configurar evaluaciones</div>
+    <div id="eval-config-body"></div>
+    <div style="margin-top:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="addEvalItem()">+ Agregar criterio</button>
+    </div>
+    <div id="eval-weight-total" style="margin-top:12px; font-size:13px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('eval-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEvalConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-title">Eliminar estudiante</div>
+    <p style="font-size:14px; color:var(--on-surface-variant); margin-bottom:20px;">¿Seguro que deseas eliminar a <strong id="delete-name"></strong>? Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('delete-modal')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+let state = {
+  groups: [
+    { id: 'g1', name: 'Matemáticas 3°A', color: '#004ac6', evals: 3 },
+    { id: 'g2', name: 'Física 2°B', color: '#1a6b3a', evals: 3 },
+    { id: 'g3', name: 'Química 1°C', color: '#6d3a9c', evals: 3 }
+  ],
+  students: [
+    { id: 1, name: 'Ana', lastname: 'García López', studentId: '2024001', group: 'g1', email: 'ana@edu.mx', status: 'Activo' },
+    { id: 2, name: 'Carlos', lastname: 'Martínez Pérez', studentId: '2024002', group: 'g1', email: '', status: 'Activo' },
+    { id: 3, name: 'Diana', lastname: 'Hernández Ruiz', studentId: '2024003', group: 'g1', email: '', status: 'Activo' },
+    { id: 4, name: 'Eduardo', lastname: 'López Torres', studentId: '2024004', group: 'g2', email: '', status: 'Activo' },
+    { id: 5, name: 'Fernanda', lastname: 'Rodríguez Soto', studentId: '2024005', group: 'g2', email: '', status: 'Irregular' },
+    { id: 6, name: 'Gabriel', lastname: 'Sánchez Mora', studentId: '2024006', group: 'g3', email: '', status: 'Activo' },
+    { id: 7, name: 'Héctor', lastname: 'Ramírez Villa', studentId: '2024007', group: 'g3', email: '', status: 'Activo' },
+  ],
+  grades: {}, // { studentId_groupId_evalIdx: score }
+  exams: {}, // { studentId_groupId_period: score }
+  finalExams: {}, // { studentId_groupId: score }
+  attendance: {}, // { studentId_groupId_date: P|A|T }
+  evalConfigs: {
+    'g1': [
+      { name: 'Tareas', weight: 20 },
+      { name: 'Participación', weight: 10 },
+      { name: 'Proyecto', weight: 30 },
+      { name: 'Examen parcial', weight: 40 }
+    ],
+    'g2': [
+      { name: 'Prácticas', weight: 30 },
+      { name: 'Tareas', weight: 20 },
+      { name: 'Examen', weight: 50 }
+    ],
+    'g3': [
+      { name: 'Laboratorio', weight: 40 },
+      { name: 'Teoría', weight: 60 }
+    ]
+  },
+  activityLog: [
+    '✔ Calificación guardada — Matemáticas 3°A',
+    '👤 Estudiante agregado — Ana García',
+    '📅 Asistencia registrada — Física 2°B',
+  ],
+  currentEditId: null,
+  deleteTargetId: null,
+  currentEditGroupId: null,
+  currentView: 'dashboard'
+};
+
+let nextStudentId = 8;
+let nextGroupId = 4;
+
+// ==================== INIT ====================
+function init() {
+  renderGroups();
+  populateGroupSelects();
+  renderDashboard();
+  renderStudentsTable();
+}
+
+// ==================== NAVIGATION ====================
+function showView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  const titles = { dashboard: 'Panel general', students: 'Estudiantes', grades: 'Calificaciones', attendance: 'Asistencia', reports: 'Reportes' };
+  document.getElementById('page-title').textContent = titles[view];
+  const navs = document.querySelectorAll('.nav-item');
+  const idx = ['dashboard','students','grades','attendance','reports'].indexOf(view);
+  if (idx >= 0) navs[idx].classList.add('active');
+  state.currentView = view;
+  if (view === 'dashboard') renderDashboard();
+  if (view === 'grades') populateGroupSelect('grade-group-sel');
+  if (view === 'attendance') populateGroupSelect('att-group-sel');
+  if (view === 'reports') populateGroupSelect('report-group-sel');
+}
+
+// ==================== GROUPS ====================
+function renderGroups() {
+  const list = document.getElementById('group-list');
+  list.innerHTML = '';
+  state.groups.forEach(g => {
+    const d = document.createElement('div');
+    d.className = 'group-chip';
+    d.innerHTML = `<span class="group-dot" style="background:${g.color}"></span><span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g.name}</span>
+      <span class="group-chip-actions">
+        <button class="group-chip-btn" title="Editar" onclick="event.stopPropagation(); editGroup('${g.id}')">✏️</button>
+        <button class="group-chip-btn" title="Eliminar" onclick="event.stopPropagation(); deleteGroup('${g.id}')">🗑️</button>
+      </span>`;
+    d.onclick = () => { showView('grades'); setTimeout(() => { document.getElementById('grade-group-sel').value = g.id; renderGradeTable(); }, 50); };
+    list.appendChild(d);
+  });
+  document.getElementById('stat-groups').textContent = state.groups.length;
+}
+
+function populateGroupSelects() {
+  ['student-group-filter','s-group','grade-group-sel','att-group-sel','report-group-sel'].forEach(id => {
+    populateGroupSelect(id);
+  });
+}
+
+function populateGroupSelect(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const val = el.value;
+  const hasAll = ['student-group-filter'].includes(id);
+  el.innerHTML = hasAll ? '<option value="">Todos los grupos</option>' : '<option value="">Seleccionar…</option>';
+  state.groups.forEach(g => {
+    el.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+  });
+  el.value = val;
+}
+
+function openAddGroupModal() {
+  state.currentEditGroupId = null;
+  document.getElementById('group-modal-title').textContent = 'Nuevo grupo / materia';
+  document.getElementById('group-save-btn').textContent = 'Crear grupo';
+  document.getElementById('g-name').value = '';
+  openModal('group-modal');
+}
+
+function saveGroup() {
+  const name = document.getElementById('g-name').value.trim();
+  const color = document.getElementById('g-color').value;
+  const evals = parseInt(document.getElementById('g-evals').value) || 3;
+  if (!name) { alert('Escribe el nombre del grupo'); return; }
+  if (state.currentEditGroupId) {
+    const g = state.groups.find(x => x.id === state.currentEditGroupId);
+    if (g) { g.name = name; g.color = color; g.evals = evals; }
+    logActivity(`✏️ Grupo editado — ${name}`);
+    state.currentEditGroupId = null;
+  } else {
+    const id = 'g' + (nextGroupId++);
+  state.groups.push({ id, name, color, evals });
+  state.evalConfigs[id] = Array.from({length: evals}, (_,i) => ({ name: `Evaluación ${i+1}`, weight: Math.floor(100/evals) }));
+    logActivity(`📚 Grupo creado — ${name}`);
+  }
+  closeModal('group-modal');
+  document.getElementById('g-name').value = '';
+  document.getElementById('group-modal-title').textContent = 'Nuevo grupo / materia';
+  document.getElementById('group-save-btn').textContent = 'Crear grupo';
+  renderGroups();
+  populateGroupSelects();
+  renderDashboard();
+}
+
+function editGroup(gid) {
+  const g = state.groups.find(x => x.id === gid);
+  if (!g) return;
+  state.currentEditGroupId = gid;
+  document.getElementById('group-modal-title').textContent = 'Editar grupo / materia';
+  document.getElementById('group-save-btn').textContent = 'Guardar cambios';
+  document.getElementById('g-name').value = g.name;
+  document.getElementById('g-color').value = g.color;
+  document.getElementById('g-evals').value = g.evals;
+  openModal('group-modal');
+}
+
+function deleteGroup(gid) {
+  const g = state.groups.find(x => x.id === gid);
+  if (!g) return;
+  if (!confirm(`¿Eliminar el grupo "${g.name}"? Se perderán todos los datos asociados.`)) return;
+  state.groups = state.groups.filter(x => x.id !== gid);
+  state.students.forEach(s => { if (s.group === gid) s.group = ''; });
+  delete state.evalConfigs[gid];
+  renderGroups();
+  populateGroupSelects();
+  renderStudentsTable();
+  renderDashboard();
+  logActivity(`🗑 Grupo eliminado — ${g.name}`);
+  showToast('Grupo eliminado');
+}
+
+// ==================== STUDENTS ====================
+function renderStudentsTable(list) {
+  const students = list || state.students;
+  const tbody = document.getElementById('students-tbody');
+  tbody.innerHTML = '';
+  if (!students.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="padding:32px; text-align:center; color:var(--outline);">No hay alumnos registrados</td></tr>`;
+    return;
+  }
+  students.forEach((s, i) => {
+    const g = state.groups.find(gr => gr.id === s.group);
+    const avg = calcStudentAvg(s.id, s.group);
+    const pill = gradePill(avg);
+    tbody.innerHTML += `<tr>
+      <td style="color:var(--outline); font-size:12px;">${i+1}</td>
+      <td><strong>${s.lastname}, ${s.name}</strong></td>
+      <td style="color:var(--outline);">${s.studentId}</td>
+      <td><span style="background:${g ? g.color + '22' : '#eee'}; color:${g ? g.color : '#555'}; padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:700;">${g ? g.name : 'Sin grupo'}</span></td>
+      <td>${avg !== null ? `<span style="font-weight:700;">${avg.toFixed(1)}</span>` : '<span style="color:var(--outline);">—</span>'}</td>
+      <td>${pill}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" title="Editar" onclick="editStudent(${s.id})">✏️</button>
+        <button class="btn btn-ghost btn-sm btn-icon" title="Eliminar" onclick="deleteStudent(${s.id})">🗑️</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('stat-students').textContent = state.students.length;
+}
+
+function filterStudents() {
+  const q = document.getElementById('student-search').value.toLowerCase();
+  const gf = document.getElementById('student-group-filter').value;
+  let list = state.students.filter(s => {
+    const full = (s.name + ' ' + s.lastname + ' ' + s.studentId).toLowerCase();
+    return (!q || full.includes(q)) && (!gf || s.group === gf);
+  });
+  renderStudentsTable(list);
+}
+
+function sortStudentsAZ() {
+  state.students.sort((a, b) => (a.lastname + a.name).localeCompare(b.lastname + b.name));
+  renderStudentsTable();
+  logActivity('↕ Alumnos ordenados A-Z');
+}
+
+function openStudentModal(id) {
+  state.currentEditId = id || null;
+  document.getElementById('student-modal-title').textContent = id ? 'Editar estudiante' : 'Agregar estudiante';
+  populateGroupSelect('s-group');
+  if (id) {
+    const s = state.students.find(x => x.id === id);
+    document.getElementById('s-name').value = s.name;
+    document.getElementById('s-lastname').value = s.lastname;
+    document.getElementById('s-id').value = s.studentId;
+    document.getElementById('s-group').value = s.group;
+    document.getElementById('s-email').value = s.email || '';
+    document.getElementById('s-status').value = s.status;
+  } else {
+    ['s-name','s-lastname','s-id','s-email'].forEach(f => document.getElementById(f).value = '');
+    document.getElementById('s-status').value = 'Activo';
+  }
+  openModal('student-modal');
+}
+
+function editStudent(id) { openStudentModal(id); }
+
+function saveStudent() {
+  const name = document.getElementById('s-name').value.trim();
+  const lastname = document.getElementById('s-lastname').value.trim();
+  const studentId = document.getElementById('s-id').value.trim();
+  const group = document.getElementById('s-group').value;
+  if (!name || !lastname || !studentId || !group) { alert('Completa todos los campos obligatorios'); return; }
+  if (state.currentEditId) {
+    const s = state.students.find(x => x.id === state.currentEditId);
+    Object.assign(s, { name, lastname, studentId, group, email: document.getElementById('s-email').value, status: document.getElementById('s-status').value });
+    logActivity(`✏️ Alumno editado — ${lastname}, ${name}`);
+  } else {
+    state.students.push({ id: nextStudentId++, name, lastname, studentId, group, email: document.getElementById('s-email').value, status: document.getElementById('s-status').value });
+    logActivity(`👤 Alumno agregado — ${lastname}, ${name}`);
+  }
+  closeModal('student-modal');
+  renderStudentsTable();
+  renderDashboard();
+}
+
+function deleteStudent(id) {
+  state.deleteTargetId = id;
+  const s = state.students.find(x => x.id === id);
+  document.getElementById('delete-name').textContent = `${s.lastname}, ${s.name}`;
+  openModal('delete-modal');
+}
+
+function confirmDelete() {
+  const s = state.students.find(x => x.id === state.deleteTargetId);
+  state.students = state.students.filter(x => x.id !== state.deleteTargetId);
+  logActivity(`🗑 Alumno eliminado — ${s.lastname}, ${s.name}`);
+  closeModal('delete-modal');
+  renderStudentsTable();
+  renderDashboard();
+}
+
+// ==================== GRADES ====================
+function toggleGradeAttOptions() {
+  const cb = document.getElementById('grade-att-affects');
+  const wrap = document.getElementById('grade-att-pct-wrap');
+  wrap.style.display = cb.checked ? 'flex' : 'none';
+  renderGradeTable();
+}
+
+function sortGradeStudentsAZ() {
+  state.students.sort((a, b) => (a.lastname + a.name).localeCompare(b.lastname + b.name));
+  renderGradeTable();
+  showToast('Alumnos ordenados A-Z');
+}
+
+function renderGradeTable() {
+  const gid = document.getElementById('grade-group-sel').value;
+  const wrap = document.getElementById('grade-table-wrap');
+  if (!gid) { wrap.innerHTML = '<div class="empty-state"><p>Selecciona un grupo</p></div>'; return; }
+  const group = state.groups.find(g => g.id === gid);
+  const students = state.students.filter(s => s.group === gid);
+  const config = state.evalConfigs[gid] || [];
+  if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
+
+  const attAffects = document.getElementById('grade-att-affects')?.checked;
+  const attPct = attAffects ? (parseInt(document.getElementById('grade-att-pct')?.value) || 10) : 0;
+
+  let thead = '<thead><tr><th>#</th><th>Alumno</th>';
+  config.forEach((ev, i) => { thead += `<th>${ev.name}<br><small style="color:var(--outline);font-weight:400">${ev.weight}%</small></th>`; });
+  if (attAffects) thead += `<th>Asistencia<br><small style="color:var(--outline);font-weight:400">${attPct}% impacto</small></th>`;
+  thead += '<th>Promedio</th></tr></thead>';
+
+  let tbody = '<tbody>';
+  students.forEach((s, si) => {
+    tbody += `<tr><td style="color:var(--outline);">${si+1}</td><td><strong>${s.lastname}, ${s.name}</strong></td>`;
+    config.forEach((ev, ei) => {
+      const key = `${s.id}_${gid}_${ei}`;
+      const val = state.grades[key] !== undefined ? state.grades[key] : '';
+      tbody += `<td><input class="grade-input" type="number" min="0" max="10" step="0.1" value="${val}" data-key="${key}" oninput="updateGradePreview(this,${s.id},'${gid}')"></td>`;
+    });
+    if (attAffects) {
+      const attKeys = Object.keys(state.attendance).filter(k => k.startsWith(`${s.id}_${gid}_`));
+      const dates = attKeys.map(k => k.split('_')[2]);
+      const pct = dates.length ? calcAttendance(s.id, gid, dates) : null;
+      const attScore = pct !== null ? (pct / 10).toFixed(1) : '—';
+      tbody += `<td style="text-align:center; font-weight:600; color:var(--primary);">${attScore}</td>`;
+    }
+    const avg = calcStudentAvgWithAtt(s.id, gid, attAffects, attPct);
+    tbody += `<td id="avg-${s.id}-${gid}" style="font-weight:700; color:var(--primary);">${avg !== null ? avg.toFixed(1) : '—'}</td></tr>`;
+  });
+  tbody += '</tbody>';
+
+  wrap.innerHTML = `<table>${thead}${tbody}</table>`;
+}
+
+function updateGradePreview(input, sid, gid) {
+  const key = input.dataset.key;
+  const val = parseFloat(input.value);
+  if (!isNaN(val)) state.grades[key] = val;
+  const attAffects = document.getElementById('grade-att-affects')?.checked;
+  const attPct = attAffects ? (parseInt(document.getElementById('grade-att-pct')?.value) || 10) : 0;
+  const avg = calcStudentAvgWithAtt(sid, gid, attAffects, attPct);
+  const cell = document.getElementById(`avg-${sid}-${gid}`);
+  if (cell) cell.textContent = avg !== null ? avg.toFixed(1) : '—';
+}
+
+function saveGrades() {
+  const gid = document.getElementById('grade-group-sel').value;
+  if (!gid) return;
+  document.querySelectorAll('.grade-input').forEach(inp => {
+    const val = parseFloat(inp.value);
+    if (!isNaN(val)) state.grades[inp.dataset.key] = val;
+  });
+  const g = state.groups.find(x => x.id === gid);
+  logActivity(`✔ Calificaciones guardadas — ${g ? g.name : gid}`);
+  renderDashboard();
+  showToast('Calificaciones guardadas');
+}
+
+function calcStudentAvg(sid, gid) {
+  return calcStudentAvgWithAtt(sid, gid, false, 0);
+}
+
+function calcStudentAvgWithAtt(sid, gid, attAffects, attPct) {
+  const config = state.evalConfigs[gid] || [];
+  if (!config.length) return null;
+  let total = 0, totalWeight = 0;
+  config.forEach((ev, ei) => {
+    const key = `${sid}_${gid}_${ei}`;
+    if (state.grades[key] !== undefined) {
+      total += state.grades[key] * ev.weight;
+      totalWeight += ev.weight;
+    }
+  });
+  if (totalWeight === 0) return null;
+  let baseAvg = total / totalWeight;
+  if (attAffects && attPct > 0) {
+    const attKeys = Object.keys(state.attendance).filter(k => k.startsWith(`${sid}_${gid}_`));
+    const dates = attKeys.map(k => k.split('_')[2]);
+    if (dates.length > 0) {
+      const pct = calcAttendance(sid, gid, dates);
+      const attScore = pct / 10; // 0-10 scale
+      const evalWeight = (100 - attPct) / 100;
+      const attWeight = attPct / 100;
+      baseAvg = baseAvg * evalWeight + attScore * attWeight;
+    }
+  }
+  return baseAvg;
+}
+
+function gradePill(avg) {
+  if (avg === null) return '<span style="color:var(--outline);">—</span>';
+  if (avg >= 9) return `<span class="pill pill-a">A</span>`;
+  if (avg >= 8) return `<span class="pill pill-b">B</span>`;
+  if (avg >= 7) return `<span class="pill pill-c">C</span>`;
+  if (avg >= 6) return `<span class="pill pill-d">D</span>`;
+  return `<span class="pill pill-f">F</span>`;
+}
+
+// ==================== EVAL CONFIG ====================
+function openEvalConfig() {
+  const gid = document.getElementById('grade-group-sel').value;
+  if (!gid) { alert('Primero selecciona un grupo'); return; }
+  const config = state.evalConfigs[gid] || [];
+  renderEvalItems(config);
+  openModal('eval-modal');
+}
+
+function renderEvalItems(config) {
+  const body = document.getElementById('eval-config-body');
+  body.innerHTML = '';
+  config.forEach((ev, i) => {
+    body.innerHTML += `<div class="eval-item" id="eval-item-${i}">
+      <input type="text" value="${ev.name}" id="eval-name-${i}" placeholder="Nombre">
+      <input type="number" value="${ev.weight}" id="eval-w-${i}" min="1" max="100" oninput="updateWeightTotal()">
+      <span style="color:var(--outline); font-size:12px;">%</span>
+      <button class="btn btn-ghost btn-sm" onclick="removeEvalItem(${i})">✕</button>
+    </div>`;
+  });
+  updateWeightTotal();
+}
+
+function addEvalItem() {
+  const gid = document.getElementById('grade-group-sel').value;
+  const config = state.evalConfigs[gid] || [];
+  config.push({ name: 'Nueva evaluación', weight: 10 });
+  state.evalConfigs[gid] = config;
+  renderEvalItems(config);
+}
+
+function removeEvalItem(i) {
+  const gid = document.getElementById('grade-group-sel').value;
+  state.evalConfigs[gid].splice(i, 1);
+  renderEvalItems(state.evalConfigs[gid]);
+}
+
+function updateWeightTotal() {
+  const items = document.querySelectorAll('[id^="eval-w-"]');
+  let total = 0;
+  items.forEach(inp => total += parseInt(inp.value) || 0);
+  const el = document.getElementById('eval-weight-total');
+  el.innerHTML = `Total: <strong style="color:${total === 100 ? 'var(--success)' : 'var(--error)'};">${total}%</strong> ${total === 100 ? '✔' : '(debe ser 100%)'}`;
+}
+
+function saveEvalConfig() {
+  const gid = document.getElementById('grade-group-sel').value;
+  const items = document.querySelectorAll('[id^="eval-name-"]');
+  const config = [];
+  items.forEach((inp, i) => {
+    config.push({ name: inp.value, weight: parseInt(document.getElementById(`eval-w-${i}`).value) || 0 });
+  });
+  const total = config.reduce((s, c) => s + c.weight, 0);
+  if (total !== 100) { alert('El total de pesos debe ser 100%'); return; }
+  state.evalConfigs[gid] = config;
+  closeModal('eval-modal');
+  renderGradeTable();
+  logActivity(`⚙ Evaluaciones configuradas — ${state.groups.find(g => g.id === gid)?.name}`);
+}
+
+// ==================== ATTENDANCE ====================
+function updateAttCols() {}
+
+function toggleAttGradeOptions() {
+  const cb = document.getElementById('att-affects-grade');
+  const wrap = document.getElementById('att-grade-pct-wrap');
+  wrap.style.display = cb.checked ? 'flex' : 'none';
+  updateAttGradeInfo();
+}
+
+function updateAttGradeInfo() {
+  const pct = parseInt(document.getElementById('att-grade-pct').value) || 10;
+  const info = document.getElementById('att-grade-info');
+  info.textContent = `Nota: ${pct}% de la calificación final depende de asistencia`;
+}
+
+function generateAttendance() {
+  const gid = document.getElementById('att-group-sel').value;
+  const start = document.getElementById('att-start').value;
+  const end = document.getElementById('att-end').value;
+  const wrap = document.getElementById('att-table-wrap');
+  if (!gid || !start || !end) { alert('Completa todos los campos'); return; }
+  if (start > end) { alert('La fecha de inicio debe ser anterior a la fecha fin'); return; }
+
+  const startD = new Date(start + 'T00:00:00');
+  const endD = new Date(end + 'T00:00:00');
+  const diffMs = endD - startD;
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  if (diffDays > 153) { alert('El período no puede ser mayor a 5 meses (aproximadamente 153 días)'); return; }
+
+  const students = state.students.filter(s => s.group === gid);
+  if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>No hay alumnos en este grupo</p></div>'; return; }
+
+  const dates = getDatesInRange(start, end);
+
+  const affectsGrade = document.getElementById('att-affects-grade').checked;
+  const gradePct = parseInt(document.getElementById('att-grade-pct').value) || 10;
+
+  let html = `<table class="att-table"><thead><tr><th style="white-space:nowrap;">Alumno</th>`;
+  dates.forEach(d => {
+    const dt = new Date(d + 'T00:00:00');
+    html += `<th style="font-size:11px; text-align:center;">${dt.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'})}</th>`;
+  });
+  html += '<th>% Asist.</th>';
+  if (affectsGrade) html += `<th>Cal. Asist.<br><small style="font-weight:400; color:var(--outline);">${gradePct}% peso</small></th>`;
+  html += '</tr></thead><tbody>';
+
+  students.forEach(s => {
+    html += `<tr><td style="white-space:nowrap; font-size:13px;"><strong>${s.lastname}, ${s.name}</strong></td>`;
+    dates.forEach(d => {
+      const key = `${s.id}_${gid}_${d}`;
+      const val = state.attendance[key] || 'P';
+      state.attendance[key] = val;
+      html += `<td class="att-cell">
+        <select class="att-select att-sel-${val}" id="att-${key}" onchange="changeAtt('${key}', this)">
+          <option value="P" ${val==='P'?'selected':''}>P</option>
+          <option value="A" ${val==='A'?'selected':''}>A</option>
+          <option value="T" ${val==='T'?'selected':''}>T</option>
+        </select>
+      </td>`;
+    });
+    const pct = calcAttendance(s.id, gid, dates);
+    html += `<td id="attpct-${s.id}-${gid}" style="font-weight:700; font-size:13px; color:${pct >= 80 ? 'var(--success)' : 'var(--error)'};">${pct}%</td>`;
+    if (affectsGrade) {
+      const attScore = pct / 10; // converts 0-100% to 0-10 grade
+      html += `<td id="attgrade-${s.id}-${gid}" style="font-weight:700; font-size:13px; color:var(--primary);">${attScore.toFixed(1)}</td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  // Apply select styling
+  document.querySelectorAll('.att-select').forEach(sel => styleAttSelect(sel));
+
+  document.getElementById('att-legend').style.display = 'flex';
+  logActivity(`📅 Lista de asistencia generada — ${state.groups.find(g=>g.id===gid)?.name}`);
+}
+
+function styleAttSelect(sel) {
+  const v = sel.value;
+  sel.style.background = v === 'P' ? '#d3f0df' : v === 'A' ? '#ffdad6' : '#ffeeba';
+  sel.style.color = v === 'P' ? '#1a6b3a' : v === 'A' ? '#ba1a1a' : '#7a4f00';
+  sel.style.fontWeight = '700';
+  sel.style.borderColor = 'transparent';
+  sel.style.borderRadius = '6px';
+  sel.style.padding = '3px 6px';
+  sel.style.cursor = 'pointer';
+  sel.style.fontSize = '12px';
+  sel.style.textAlign = 'center';
+}
+
+function changeAtt(key, sel) {
+  state.attendance[key] = sel.value;
+  styleAttSelect(sel);
+  // Update % cell
+  const parts = key.split('_');
+  const sid = parseInt(parts[0]), gid = parts[1];
+  const allKeys = Object.keys(state.attendance).filter(k => k.startsWith(`${sid}_${gid}_`));
+  const dates = allKeys.map(k => k.split('_')[2]);
+  const pct = calcAttendance(sid, gid, dates);
+  const pctCell = document.getElementById(`attpct-${sid}-${gid}`);
+  if (pctCell) {
+    pctCell.textContent = pct + '%';
+    pctCell.style.color = pct >= 80 ? 'var(--success)' : 'var(--error)';
+  }
+  const gradeCell = document.getElementById(`attgrade-${sid}-${gid}`);
+  if (gradeCell) gradeCell.textContent = (pct / 10).toFixed(1);
+}
+
+function calcAttendance(sid, gid, dates) {
+  let present = 0;
+  dates.forEach(d => {
+    if (state.attendance[`${sid}_${gid}_${d}`] === 'P') present++;
+  });
+  return dates.length ? Math.round(present / dates.length * 100) : 0;
+}
+
+function getDatesInRange(start, end) {
+  const dates = [];
+  let cur = new Date(start + 'T00:00:00');
+  const endD = new Date(end + 'T00:00:00');
+  while (cur <= endD) {
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) { // exclude weekends
+      dates.push(cur.toISOString().split('T')[0]);
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+// ==================== REPORTS ====================
+function renderReport() {
+  const gid = document.getElementById('report-group-sel').value;
+  const wrap = document.getElementById('report-content');
+  if (!gid) { wrap.innerHTML = '<div class="empty-state"><p>Selecciona un grupo</p></div>'; return; }
+  const group = state.groups.find(g => g.id === gid);
+  const students = state.students.filter(s => s.group === gid);
+  if (!students.length) { wrap.innerHTML = '<div class="empty-state"><p>Sin alumnos en este grupo</p></div>'; return; }
+
+  const avgs = students.map(s => ({ ...s, avg: calcStudentAvg(s.id, gid) })).filter(s => s.avg !== null);
+  const groupAvg = avgs.length ? avgs.reduce((a, s) => a + s.avg, 0) / avgs.length : null;
+  const passing = avgs.filter(s => s.avg >= 6).length;
+  const failing = avgs.filter(s => s.avg < 6).length;
+
+  const dist = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+  avgs.forEach(s => {
+    if (s.avg >= 9) dist.A++;
+    else if (s.avg >= 8) dist.B++;
+    else if (s.avg >= 7) dist.C++;
+    else if (s.avg >= 6) dist.D++;
+    else dist.F++;
+  });
+
+  const sorted = [...avgs].sort((a, b) => b.avg - a.avg);
+
+  let html = `<div class="card">
+    <div class="report-header">
+      <div>
+        <div class="card-title" style="font-size:18px;">${group.name}</div>
+        <div style="color:var(--outline); font-size:13px; margin-top:4px;">${students.length} alumnos · Ciclo escolar 2024-2025</div>
+      </div>
+      <div class="big-grade">${groupAvg !== null ? groupAvg.toFixed(1) : '—'}</div>
+    </div>
+    <div class="stats-row" style="margin-bottom:0;">
+      <div class="stat-card stat-accent"><div class="stat-label">Alumnos</div><div class="stat-value">${students.length}</div></div>
+      <div class="stat-card" style="border-left:3px solid #1a6b3a;"><div class="stat-label">Aprobados</div><div class="stat-value" style="color:#1a6b3a;">${passing}</div></div>
+      <div class="stat-card" style="border-left:3px solid #ba1a1a;"><div class="stat-label">Reprobados</div><div class="stat-value" style="color:#ba1a1a;">${failing}</div></div>
+      <div class="stat-card" style="border-left:3px solid #e08000;"><div class="stat-label">% Aprobación</div><div class="stat-value">${avgs.length ? Math.round(passing/avgs.length*100) : 0}%</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;">Distribución de calificaciones</div>
+    <div style="display:grid; grid-template-columns: repeat(5,1fr); gap:8px; margin-bottom:16px;">
+      ${Object.entries(dist).map(([g, n]) => `<div style="text-align:center; padding:12px; border-radius:var(--radius-lg); background:var(--surface-low);">
+        <div style="font-size:24px; font-weight:700; color:var(--primary);">${n}</div>
+        <div class="pill pill-${g.toLowerCase()}">${g}</div>
+      </div>`).join('')}
+    </div>
+    ${Object.entries(dist).map(([g, n]) => `<div style="display:flex; align-items:center; margin-bottom:8px; gap:8px;">
+      <span style="width:24px; font-size:12px; font-weight:700;">${g}</span>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${avgs.length ? Math.round(n/avgs.length*100) : 0}%; background:${g==='A'?'#1a6b3a':g==='B'?'#004ac6':g==='C'?'#e08000':g==='D'?'#e08000':'#ba1a1a'};"></div></div>
+      <span style="font-size:12px; color:var(--outline);">${avgs.length ? Math.round(n/avgs.length*100) : 0}%</span>
+    </div>`).join('')}
+  </div>
+
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--outline-variant);"><div class="card-title">Rendimiento individual</div></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Pos.</th><th>Alumno</th><th>Promedio</th><th>Nivel</th><th>Examen final</th><th>Examen parcial</th></tr></thead>
+        <tbody>
+          ${sorted.map((s, i) => {
+            const fkey = `${s.id}_${gid}`;
+            const final = state.finalExams[fkey];
+            const p1 = state.exams[`${s.id}_${gid}_1`];
+            return `<tr>
+              <td style="font-weight:700; color:${i < 3 ? 'var(--primary)' : 'var(--outline)'};">${i+1}</td>
+              <td><strong>${s.lastname}, ${s.name}</strong></td>
+              <td><span style="font-size:16px; font-weight:700; color:${s.avg >= 6 ? 'var(--primary)' : 'var(--error)'};">${s.avg.toFixed(1)}</span></td>
+              <td>${gradePill(s.avg)}</td>
+              <td>${final !== undefined ? `<strong>${parseFloat(final).toFixed(1)}</strong>` : '<span style="color:var(--outline);">—</span>'}</td>
+              <td>${p1 !== undefined ? parseFloat(p1).toFixed(1) : '<span style="color:var(--outline);">—</span>'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  wrap.innerHTML = html;
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const allAvgs = [];
+  state.students.forEach(s => {
+    const avg = calcStudentAvg(s.id, s.group);
+    if (avg !== null) allAvgs.push(avg);
+  });
+  const globalAvg = allAvgs.length ? allAvgs.reduce((a,b)=>a+b,0)/allAvgs.length : null;
+  document.getElementById('stat-avg').textContent = globalAvg !== null ? globalAvg.toFixed(1) : '—';
+  document.getElementById('stat-students').textContent = state.students.length;
+  document.getElementById('stat-groups').textContent = state.groups.length;
+
+  // Attendance stat (placeholder)
+  const attKeys = Object.keys(state.attendance);
+  const present = attKeys.filter(k => state.attendance[k] === 'P').length;
+  const attPct = attKeys.length ? Math.round(present/attKeys.length*100) : null;
+  document.getElementById('stat-att').textContent = attPct !== null ? attPct + '%' : '—';
+
+  // Grade distribution
+  const dist = { A:0, B:0, C:0, D:0, F:0 };
+  allAvgs.forEach(a => {
+    if (a >= 9) dist.A++;
+    else if (a >= 8) dist.B++;
+    else if (a >= 7) dist.C++;
+    else if (a >= 6) dist.D++;
+    else dist.F++;
+  });
+  const colors = { A:'#1a6b3a', B:'#004ac6', C:'#e08000', D:'#e08000', F:'#ba1a1a' };
+  const total = allAvgs.length || 1;
+  let distHtml = '';
+  Object.entries(dist).forEach(([g, n]) => {
+    const pct = Math.round(n/total*100);
+    distHtml += `<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+      <span class="pill pill-${g.toLowerCase()}" style="width:32px; justify-content:center;">${g}</span>
+      <div class="progress-bar-bg" style="flex:1;"><div class="progress-bar-fill" style="width:${pct}%; background:${colors[g]};"></div></div>
+      <span style="font-size:12px; color:var(--outline); width:28px;">${pct}%</span>
+    </div>`;
+  });
+  document.getElementById('grade-dist').innerHTML = distHtml || '<span style="color:var(--outline); font-size:13px;">Sin datos de calificaciones</span>';
+
+  // Activity
+  const logEl = document.getElementById('activity-log');
+  logEl.innerHTML = state.activityLog.slice(-5).reverse().map(a => `<div style="padding:8px 0; border-bottom:1px solid var(--outline-variant);">${a}</div>`).join('') || '<span>Sin actividad reciente</span>';
+}
+
+// ==================== UTILS ====================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function logActivity(msg) {
+  state.activityLog.push(msg);
+  if (state.activityLog.length > 20) state.activityLog.shift();
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,74,198,0.3);transition:opacity 0.3s;`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2000);
+}
+
+function printReport() { window.print(); }
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+// Set default dates
+const today = new Date();
+document.getElementById('att-start').value = today.toISOString().split('T')[0];
+const weekEnd = new Date(today); weekEnd.setMonth(weekEnd.getMonth() + 1);
+document.getElementById('att-end').value = weekEnd.toISOString().split('T')[0];
+
+init();
+</script>
+</body>
+</html>
